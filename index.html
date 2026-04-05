@@ -1022,7 +1022,7 @@ setInterval(()=>syncFromSupabase(),30000);
   var _cs=L('calves',[]);var _changed=false;
   _cs.forEach(function(c){if(c.sex==='okse'){c.sex='bull';_changed=true;}else if(c.sex==='kvige'){c.sex='heifer';_changed=true;}});
   if(_changed)saveCalves(_cs);
-  var lb=localStorage.getItem('kk_bruker');if(lb)settBruker(lb);else openM('m-hvem');
+  var lb=localStorage.getItem('kk_bruker');settBruker(lb||'Brit-Ellen');
   updateSyncStatus(false,null);
   syncFromSupabase();
 })();
