@@ -11,8 +11,8 @@
 <style>
 :root{--barn:#2C1A0E;--hay:#C8A96E;--cream:#F5ECD7;--moss:#4A6741;--mossL:#EBF2EC;--rust:#A0432A;--milk:#FDFAF4;--border:#DDD0B0;--muted:#7A5C3A;--text:#1E1206;--sh:rgba(44,26,14,.15)}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-body{font-family:'DM Sans',sans-serif;background:#000000;color:#ffffff;min-height:100vh;padding-bottom:72px}
-header{background:#ff0000;color:var(--cream);padding:.8rem 1rem;display:flex;align-items:center;gap:.7rem;position:sticky;top:0;z-index:100;box-shadow:0 3px 12px var(--sh)}
+body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);min-height:100vh;padding-bottom:72px}
+header{background:var(--barn);color:var(--cream);padding:.8rem 1rem;display:flex;align-items:center;gap:.7rem;position:sticky;top:0;z-index:100;box-shadow:0 3px 12px var(--sh)}
 header h1{font-family:'Fraunces',serif;font-size:1.25rem;flex:1}
 header p{font-size:.75rem;color:var(--hay);margin-top:1px}
 .hdr-ico{background:rgba(255,255,255,.12);border:none;color:var(--cream);width:36px;height:36px;border-radius:9px;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center}
@@ -112,7 +112,7 @@ tr:last-child td{border-bottom:none}tr:hover td{background:#FAF5EC}
 </header>
 <div id="sync-status" style="text-align:center;font-size:0.72rem;font-weight:700;padding:3px 0;background:var(--barn);color:var(--hay);letter-spacing:0.03em"></div>
 
-<div id="s-hjem" class="sec on"><main><p style="font-size:2rem;color:black;font-weight:bold;padding:20px">HJEMSKJERM VISES 🐄</p>
+<div id="s-hjem" class="sec on"><main>
   <div class="sgrid">
     <div class="stile" id="t-sick" onclick="navTo('sykdom')"><div class="n" id="st-sick">0</div><div class="txt"><div class="l" id="st-sick-l">Ingen syke nå</div></div></div>
     <div class="stile grn" onclick="navTo('kalver')"><div class="n" id="st-tot">0</div><div class="txt"><div class="l">Kalver (0-3 mnd) 🐄</div><div class="l2" id="st-gen">0 kviger · 0 okser</div></div></div>
@@ -954,7 +954,7 @@ async function syncFromSupabase(){
         if(milk!==null)localStorage.setItem('kk_milk_'+c.id,JSON.stringify(milk));
       }
     }
-    try{renderHjem();}catch(e){console.error('renderHjem crash:',e.message,'stack:',e.stack);var d=document.createElement('div');d.style.cssText='position:fixed;top:50px;left:0;right:0;background:orange;color:black;padding:10px;z-index:9999;font-size:12px';d.textContent='renderHjem feil: '+e.message;document.body.appendChild(d);}renderKalver();
+    renderHjem();renderKalver();
     updateSyncStatus(true,getCalves().length);
   }catch(e){updateSyncStatus(false,null);}
 }
@@ -994,7 +994,8 @@ setInterval(()=>syncFromSupabase(),30000);
 // Push to cloud whenever calves change
 
 
-function renderHjem(){var st=getStats();var e1=document.getElementById('st-tot');if(e1)e1.textContent=st.total;var e2=document.getElementById('st-gen');if(e2)e2.textContent=st.heifers+' kviger · '+st.bulls+' okser';var e3=document.getElementById('st-sick');if(e3)e3.textContent=st.sick;var e4=document.getElementById('st-ung');if(e4)e4.textContent=st.ungdyr;var e5=document.getElementById('st-ung-gen');if(e5)e5.textContent=st.ungKviger+' kviger · '+st.ungOkser+' okser';var t=document.getElementById('t-sick');var sl=document.getElementById('st-sick-l');if(t){if(st.sick>0){t.className='stile red';if(sl)sl.textContent=st.sick===1?'1 syk kalv':st.sick+' syke';}else{t.className='stile ok';if(sl)sl.textContent='Ingen syke nå';}}var ha=document.getElementById('hjem-alerts');if(ha)ha.innerHTML='';}
+function renderHjem(){var st=getStats();$('st-tot').textContent=st.total;$('st-gen').textContent=st.heifers+' kviger · '+st.bulls+' okser';$('st-sick').textContent=st.sick;$('st-ung').textContent=st.ungdyr;$('st-ung-gen').textContent=st.ungKviger+' kviger · '+st.ungOkser+' okser';var t=$('t-sick');if(st.sick>0){t.className='stile red';$('st-sick-l').textContent=st.sick===1?'1 syk kalv':st.sick+' syke';}else{t.className='stile ok';$('st-sick-l').textContent='Ingen syke nå';}var al=[];if(st.sick)al.push('🔴 '+st.sick+' kalv(er) trenger behandling');$('hjem-alerts').innerHTML=al.length?'<div class="card" style="border-left:4px solid var(--rust);background:#FFF5F3;margin-top:.5rem">'+al.map(function(x){return'<div style="font-size:.87rem;color:#7A5000;padding:.2rem 0">'+x+'</div>';}).join('')+'</div>':'';}
+
 function renderUngdyr(){var cs=getCalves().filter(function(c){var d=c.born?daysBetween(c.born,today()):null;return c.status!=='utrangert'&&d!==null&&d>=90&&d<180;});var g=$('ung-grid'),e=$('ung-empty');if(!cs.length){g.innerHTML='';e.style.display='';return;}e.style.display='none';var html='';cs.forEach(function(c){var age=ageStr(c.born);var sexB=c.sex==='bull'?'<span class="badge b-bull">Okse</span>':'<span class="badge b-cow">Kvige</span>';var sickB=c.status==='sick'?'<span class="badge b-sick">Syk</span>':'';html+='<div class="cc sg" data-id="'+c.id+'">'+'<div class="ch"><div class="cn">'+(c.earTag?'<span style="color:var(--muted);font-size:.85rem;font-weight:600">'+c.earTag+' </span>':'')+(c.name||'(uten navn)')+'</div><div style="display:flex;gap:.25rem">'+sexB+sickB+'</div></div>'+'<div class="cm">'+(c.born?'<div>'+fmtD(c.born)+(age?' · '+age:'')+'</div>':'')+(c.pen?'<div>'+c.pen+'</div>':'')+'</div></div>';});g.innerHTML=html;g.querySelectorAll('[data-id]').forEach(function(el){el.addEventListener('click',function(){navTo('kalvkort',this.dataset.id);});});}
 
 function loadForingInnstillinger(){try{return JSON.parse(localStorage.getItem('kk_foringsinnst')||'{}')}catch(e){return {};}}
@@ -1267,9 +1268,9 @@ function lagreSmokk(key){
 
 (()=>{
   const s=getSet();
-  var _ht=document.getElementById('hdr-title');if(_ht)_ht.textContent=s.farmName||'Brit-Ellens kalvekontroll';
-  var _sf=document.getElementById('set-farm');if(_sf)_sf.value=s.farmName||'';
-  var _sn=document.getElementById('set-name');if(_sn)_sn.value=s.farmerName||'';
+  $('hdr-title').textContent=s.farmName||'Brit-Ellens kalvekontroll';
+  $('set-farm').value=s.farmName||'';
+  $('set-name').value=s.farmerName||'';
   if($('set-tel1'))$('set-tel1').value=s.tel1||'';
   if($('set-tel2'))$('set-tel2').value=s.tel2||'';
   if($('set-telvet'))$('set-telvet').value=s.telVet||'';
@@ -1277,9 +1278,9 @@ function lagreSmokk(key){
   if($('set-pens'))$('set-pens').value=s.pens||3;
   if($('set-kbinger'))$('set-kbinger').value=s.kbinger||2;
   if($('set-smokk'))$('set-smokk').value=s.smokk||'';
-  if($('ac-born'))$('ac-born').value=today();
-  if($('tx-d'))$('tx-d').value=today();
-  if($('nn-d'))$('nn-d').value=today();
+  $('ac-born').value=today();
+  $('tx-d').value=today();
+  $('nn-d').value=today();
   // Pre-fill Supabase fields if stored
   const sbUrl=localStorage.getItem('sb_url')||SB_URL;
   const sbKey=localStorage.getItem('sb_key')||SB_KEY;
@@ -1288,7 +1289,7 @@ function lagreSmokk(key){
   // Store defaults if not set
   if(!localStorage.getItem('sb_url'))localStorage.setItem('sb_url',SB_URL);
   if(!localStorage.getItem('sb_key'))localStorage.setItem('sb_key',SB_KEY);
-  try{renderHjem();}catch(e){var d=document.createElement('div');d.style.cssText='position:fixed;top:50px;left:10px;right:10px;background:orange;padding:10px;z-index:9999;font-size:13px;border-radius:8px';d.textContent='Feil i renderHjem: '+e.message+' ('+e.stack.split('\n')[1]+')';document.body.appendChild(d);}
+  renderHjem();
   checkAlerts();
   // Migrer gamle kjønnskoder
   var _cs=L('calves',[]);var _changed=false;
