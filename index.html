@@ -954,7 +954,7 @@ async function syncFromSupabase(){
         if(milk!==null)localStorage.setItem('kk_milk_'+c.id,JSON.stringify(milk));
       }
     }
-    renderHjem();renderKalver();
+    try{renderHjem();}catch(e){console.error('renderHjem crash:',e.message,'stack:',e.stack);var d=document.createElement('div');d.style.cssText='position:fixed;top:50px;left:0;right:0;background:orange;color:black;padding:10px;z-index:9999;font-size:12px';d.textContent='renderHjem feil: '+e.message;document.body.appendChild(d);}renderKalver();
     updateSyncStatus(true,getCalves().length);
   }catch(e){updateSyncStatus(false,null);}
 }
@@ -1005,9 +1005,9 @@ setInterval(()=>syncFromSupabase(),30000);
   if($('set-pens'))$('set-pens').value=s.pens||3;
   if($('set-kbinger'))$('set-kbinger').value=s.kbinger||2;
   if($('set-smokk'))$('set-smokk').value=s.smokk||'';
-  $('ac-born').value=today();
-  $('tx-d').value=today();
-  $('nn-d').value=today();
+  if($('ac-born'))$('ac-born').value=today();
+  if($('tx-d'))$('tx-d').value=today();
+  if($('nn-d'))$('nn-d').value=today();
   // Pre-fill Supabase fields if stored
   const sbUrl=localStorage.getItem('sb_url')||SB_URL;
   const sbKey=localStorage.getItem('sb_key')||SB_KEY;
@@ -1016,7 +1016,7 @@ setInterval(()=>syncFromSupabase(),30000);
   // Store defaults if not set
   if(!localStorage.getItem('sb_url'))localStorage.setItem('sb_url',SB_URL);
   if(!localStorage.getItem('sb_key'))localStorage.setItem('sb_key',SB_KEY);
-  renderHjem();
+  try{renderHjem();}catch(e){var d=document.createElement('div');d.style.cssText='position:fixed;top:50px;left:10px;right:10px;background:orange;padding:10px;z-index:9999;font-size:13px;border-radius:8px';d.textContent='Feil i renderHjem: '+e.message+' ('+e.stack.split('\n')[1]+')';document.body.appendChild(d);}
   checkAlerts();
   // Migrer gamle kjønnskoder
   var _cs=L('calves',[]);var _changed=false;
