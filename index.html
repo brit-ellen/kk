@@ -11,7 +11,7 @@
 <style>
 :root{--barn:#2C1A0E;--hay:#C8A96E;--cream:#F5ECD7;--moss:#4A6741;--mossL:#EBF2EC;--rust:#A0432A;--milk:#FDFAF4;--border:#DDD0B0;--muted:#7A5C3A;--text:#1E1206;--sh:rgba(44,26,14,.15)}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-body{font-family:'DM Sans',sans-serif;background:#ffffff;color:var(--text);min-height:100vh;padding-bottom:72px}
+body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);min-height:100vh;padding-bottom:72px}
 header{background:var(--barn);color:var(--cream);padding:.8rem 1rem;display:flex;align-items:center;gap:.7rem;position:sticky;top:0;z-index:100;box-shadow:0 3px 12px var(--sh)}
 header h1{font-family:'Fraunces',serif;font-size:1.25rem;flex:1}
 header p{font-size:.75rem;color:var(--hay);margin-top:1px}
@@ -26,18 +26,18 @@ main{max-width:680px;margin:0 auto;padding:1rem}
 .card{background:var(--milk);border:1.5px solid var(--border);border-radius:14px;padding:1.1rem 1.2rem;box-shadow:0 2px 8px var(--sh);margin-bottom:.9rem}
 .card h3{font-family:'Fraunces',serif;font-size:1rem;color:var(--barn);margin-bottom:.7rem;display:flex;align-items:center;gap:.4rem}
 .sgrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.7rem;margin-bottom:.9rem}
-.stile{background:#ffffff;border:3px solid #1E3F7A;border-radius:13px;padding:1rem 1.1rem;cursor:pointer;display:flex;align-items:center;gap:.8rem;transition:transform .15s}
+.stile{background:var(--milk);border:1.5px solid var(--border);border-radius:13px;padding:1rem 1.1rem;cursor:pointer;display:flex;align-items:center;gap:.8rem;transition:transform .15s}
 .stile:hover{transform:translateY(-2px)}
-.stile .n{font-family:'Fraunces',serif;color:#1E3F7A !important;font-size:3.2rem;font-weight:900;color:var(--barn);line-height:1;flex-shrink:0}
+.stile .n{font-family:'Fraunces',serif;font-size:3.2rem;font-weight:900;color:var(--barn);line-height:1;flex-shrink:0}
 .stile .txt{display:flex;flex-direction:column;gap:2px}.stile .l{font-size:1.1rem;color:var(--muted);font-weight:700;line-height:1.2}.stile .l2{font-size:1rem;color:var(--muted);font-weight:600}
 .stile.red{border-color:var(--rust);background:#A0432A}.stile.red .n{color:#fff}.stile.red .l{color:#fff}.stile.ok{border-color:#2A7A1A;background:#2A7A1A}.stile.ok .n{color:#fff}.stile.ok .l{color:#fff}
 .stile.grn{border-color:#7AAFC8;background:#C5DFF0}.stile.grn .n{color:#1A4A6A}.stile.grn .l{color:#1A4A6A}.stile.grn .l2{color:#2A5A7A}.stile.warm{border-color:#D4B84A;background:#F5E6A0}.stile.warm .n{color:#7A5000}.stile.warm .l{color:#7A5000}.stile.warm .l2{color:#8A6010}
 .tgrid{display:grid;grid-template-columns:1fr 1fr;gap:.7rem;margin-bottom:.9rem}
 .tgrid.t3{grid-template-columns:1fr 1fr 1fr}
-.tile{background:#1E3F7A;border:2px solid #1E3F7A;color:white;border-radius:14px;padding:1.1rem .7rem .9rem;display:flex;flex-direction:column;align-items:center;gap:.4rem;cursor:pointer;font-family:'DM Sans',sans-serif;transition:transform .15s,box-shadow .15s;box-shadow:0 2px 6px var(--sh)}
+.tile{background:#F8F3E8;border:1.5px solid var(--border);border-radius:14px;padding:1.1rem .7rem .9rem;display:flex;flex-direction:column;align-items:center;gap:.4rem;cursor:pointer;font-family:'DM Sans',sans-serif;transition:transform .15s,box-shadow .15s;box-shadow:0 2px 6px var(--sh)}
 .tile:hover{transform:translateY(-2px);box-shadow:0 6px 18px var(--sh)}
 .tile .ti{font-size:2.1rem;line-height:1}
-.tile .tl{font-size:.85rem;font-weight:700;color:#ffffff;text-align:center}
+.tile .tl{font-size:.85rem;font-weight:700;color:var(--text);text-align:center}
 .tile.grn{background:var(--mossL);border-color:#C4D9C6}
 .tile.warm{background:#FFF8EC;border-color:#E8D5A8}
 .tile.blue{background:#EAF4FB;border-color:#B8D8EA}
@@ -995,9 +995,9 @@ setInterval(()=>syncFromSupabase(),30000);
 
 (()=>{
   const s=getSet();
-  $('hdr-title').textContent=s.farmName||'Brit-Ellens kalvekontroll';
-  $('set-farm').value=s.farmName||'';
-  $('set-name').value=s.farmerName||'';
+  var _ht=document.getElementById('hdr-title');if(_ht)_ht.textContent=s.farmName||'Brit-Ellens kalvekontroll';
+  var _sf=document.getElementById('set-farm');if(_sf)_sf.value=s.farmName||'';
+  var _sn=document.getElementById('set-name');if(_sn)_sn.value=s.farmerName||'';
   if($('set-tel1'))$('set-tel1').value=s.tel1||'';
   if($('set-tel2'))$('set-tel2').value=s.tel2||'';
   if($('set-telvet'))$('set-telvet').value=s.telVet||'';
