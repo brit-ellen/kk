@@ -659,7 +659,7 @@ const getStats=()=>{const cs=getCalves(),a=cs.filter(c=>c.status!=='utrangert');
 const getTaxi=()=>L('taxi',[]);
 const addTaxi=o=>{const a=getTaxi();a.unshift({id:uid(),date:today(),...o});S('taxi',a)};
 const delTaxi=id=>S('taxi',getTaxi().filter(e=>e.id!==id));
-const $=id=>document.getElementById(id);
+const $=function(id){var el=document.getElementById(id);if(!el){var dummy={style:{},classList:{add:function(){},remove:function(){},contains:function(){return false;},toggle:function(){}},value:'',textContent:'',innerHTML:'',scrollTop:0};return dummy;}return el;};
 let currentCalfId=null,kFilterVal='alle',mFilterVal='alle',tlFilterVal='alle';
 const navMap={hjem:'s-hjem',kalver:'s-kalver',kalvkort:'s-kalvkort',ungdyr:'s-ungdyr',melk:'s-melk',fjos:'s-fjos',sykdom:'s-sykdom',mer:'s-mer',rapport:'s-rapport',avloser:'s-avloser',tidslinje:'s-tidslinje',smokk:'s-smokk',notat:'s-notat',melketaxi:'s-melketaxi'};
 const navBtns={hjem:0,fjos:1,melk:2,sykdom:3,mer:4,kalvkort:4,ungdyr:4,kalver:4,rapport:4,avloser:4,tidslinje:4,smokk:0,notat:4,melketaxi:0};
@@ -993,6 +993,39 @@ function saveSupabaseConfig(){
 setInterval(()=>syncFromSupabase(),30000);
 // Push to cloud whenever calves change
 
+(()=>{
+  const s=getSet();
+  $('hdr-title').textContent=s.farmName||'Brit-Ellens kalvekontroll';
+  $('set-farm').value=s.farmName||'';
+  $('set-name').value=s.farmerName||'';
+  if($('set-tel1'))$('set-tel1').value=s.tel1||'';
+  if($('set-tel2'))$('set-tel2').value=s.tel2||'';
+  if($('set-telvet'))$('set-telvet').value=s.telVet||'';
+  if($('set-boxes'))$('set-boxes').value=s.boxes||6;
+  if($('set-pens'))$('set-pens').value=s.pens||3;
+  if($('set-kbinger'))$('set-kbinger').value=s.kbinger||2;
+  if($('set-smokk'))$('set-smokk').value=s.smokk||'';
+  $('ac-born').value=today();
+  $('tx-d').value=today();
+  $('nn-d').value=today();
+  // Pre-fill Supabase fields if stored
+  const sbUrl=localStorage.getItem('sb_url')||SB_URL;
+  const sbKey=localStorage.getItem('sb_key')||SB_KEY;
+  if($('sb-url-input'))$('sb-url-input').value=sbUrl;
+  if($('sb-key-input'))$('sb-key-input').value=sbKey;
+  // Store defaults if not set
+  if(!localStorage.getItem('sb_url'))localStorage.setItem('sb_url',SB_URL);
+  if(!localStorage.getItem('sb_key'))localStorage.setItem('sb_key',SB_KEY);
+  renderHjem();
+  checkAlerts();
+  // Migrer gamle kjønnskoder
+  var _cs=L('calves',[]);var _changed=false;
+  _cs.forEach(function(c){if(c.sex==='okse'){c.sex='bull';_changed=true;}else if(c.sex==='kvige'){c.sex='heifer';_changed=true;}});
+  if(_changed)saveCalves(_cs);
+  var lb=localStorage.getItem('kk_bruker');if(lb)settBruker(lb);else openM('m-hvem');
+  updateSyncStatus(false,null);
+  syncFromSupabase();
+})();
 
 function renderHjem(){var st=getStats();$('st-tot').textContent=st.total;$('st-gen').textContent=st.heifers+' kviger · '+st.bulls+' okser';$('st-sick').textContent=st.sick;$('st-ung').textContent=st.ungdyr;$('st-ung-gen').textContent=st.ungKviger+' kviger · '+st.ungOkser+' okser';var t=$('t-sick');if(st.sick>0){t.className='stile red';$('st-sick-l').textContent=st.sick===1?'1 syk kalv':st.sick+' syke';}else{t.className='stile ok';$('st-sick-l').textContent='Ingen syke nå';}var al=[];if(st.sick)al.push('🔴 '+st.sick+' kalv(er) trenger behandling');$('hjem-alerts').innerHTML=al.length?'<div class="card" style="border-left:4px solid var(--rust);background:#FFF5F3;margin-top:.5rem">'+al.map(function(x){return'<div style="font-size:.87rem;color:#7A5000;padding:.2rem 0">'+x+'</div>';}).join('')+'</div>':'';}
 
@@ -1264,41 +1297,6 @@ function lagreSmokk(key){
   toast('Smokk lagret ✓');
   renderSmokkSide();
 }
-
-
-(()=>{
-  const s=getSet();
-  $('hdr-title').textContent=s.farmName||'Brit-Ellens kalvekontroll';
-  $('set-farm').value=s.farmName||'';
-  $('set-name').value=s.farmerName||'';
-  if($('set-tel1'))$('set-tel1').value=s.tel1||'';
-  if($('set-tel2'))$('set-tel2').value=s.tel2||'';
-  if($('set-telvet'))$('set-telvet').value=s.telVet||'';
-  if($('set-boxes'))$('set-boxes').value=s.boxes||6;
-  if($('set-pens'))$('set-pens').value=s.pens||3;
-  if($('set-kbinger'))$('set-kbinger').value=s.kbinger||2;
-  if($('set-smokk'))$('set-smokk').value=s.smokk||'';
-  $('ac-born').value=today();
-  $('tx-d').value=today();
-  $('nn-d').value=today();
-  // Pre-fill Supabase fields if stored
-  const sbUrl=localStorage.getItem('sb_url')||SB_URL;
-  const sbKey=localStorage.getItem('sb_key')||SB_KEY;
-  if($('sb-url-input'))$('sb-url-input').value=sbUrl;
-  if($('sb-key-input'))$('sb-key-input').value=sbKey;
-  // Store defaults if not set
-  if(!localStorage.getItem('sb_url'))localStorage.setItem('sb_url',SB_URL);
-  if(!localStorage.getItem('sb_key'))localStorage.setItem('sb_key',SB_KEY);
-  renderHjem();
-  checkAlerts();
-  // Migrer gamle kjønnskoder
-  var _cs=L('calves',[]);var _changed=false;
-  _cs.forEach(function(c){if(c.sex==='okse'){c.sex='bull';_changed=true;}else if(c.sex==='kvige'){c.sex='heifer';_changed=true;}});
-  if(_changed)saveCalves(_cs);
-  var lb=localStorage.getItem('kk_bruker');settBruker(lb||'Brit-Ellen');
-  updateSyncStatus(false,null);
-  syncFromSupabase();
-})();
 
 </script>
 </body>
