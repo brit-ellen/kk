@@ -1019,7 +1019,7 @@ setInterval(()=>syncFromSupabase(),30000);
   if(!localStorage.getItem('sb_key'))localStorage.setItem('sb_key',SB_KEY);
   console.log('Calling renderHjem...');
   renderHjem();
-  console.log('renderHjem done, s-hjem:', document.getElementById('s-hjem')?.className);
+  var _shj=document.getElementById('s-hjem'); console.log('s-hjem element:', _shj, 'class:', _shj ? _shj.className : 'NULL'); if(_shj){console.log('s-hjem display:', window.getComputedStyle(_shj).display); console.log('main children:', _shj.querySelector('main') ? 'exists' : 'missing');}
   checkAlerts();
   // Migrer gamle kjønnskoder
   var _cs=L('calves',[]);var _changed=false;
