@@ -99,6 +99,7 @@ tr:last-child td{border-bottom:none}tr:hover td{background:#FAF5EC}
 @media(min-width:601px){.modal{border-radius:18px;max-width:500px;align-self:center}.mo{align-items:center;padding:1rem}}
 @media print{header,.bnav,.btn,.mo,#av-print-overlay .btn{display:none!important}body{background:#fff;padding:0}.sec{display:block!important}#s-rapport{display:block!important}#s-hjem,#s-kalver,#s-fjos,#s-sykdom,#s-mer{display:none!important}#av-print-overlay{position:static!important;padding:0!important}}
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 </head>
 <body>
 <header>
@@ -112,6 +113,8 @@ tr:last-child td{border-bottom:none}tr:hover td{background:#FAF5EC}
 </header>
 <div id="sync-status" style="text-align:center;font-size:0.72rem;font-weight:700;padding:3px 0;background:var(--barn);color:var(--hay);letter-spacing:0.03em"></div>
 
+<div id="kk-toast" style="display:none;position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--barn);color:var(--cream);padding:.6rem 1.2rem;border-radius:20px;font-size:.88rem;font-weight:700;z-index:999;white-space:nowrap"></div>
+<input type="hidden" id="f-navel2">
 <div id="s-hjem" class="sec on"><main>
   <div class="sgrid">
     <div class="stile" id="t-sick" onclick="navTo('sykdom')"><div class="n" id="st-sick">0</div><div class="txt"><div class="l" id="st-sick-l">Ingen syke nå</div></div></div>
@@ -146,6 +149,7 @@ tr:last-child td{border-bottom:none}tr:hover td{background:#FAF5EC}
     <button class="btn bm sm" onclick="openM('m-addcalf')">＋ Ny kalv</button>
     <button class="btn bg sm" onclick="openM('m-import')">📥 Importer</button>
   </div>
+  <div id="flytt-bar" style="display:none;background:var(--hay);border-radius:10px;padding:.5rem .7rem;margin-bottom:.7rem;align-items:center;justify-content:space-between;gap:.5rem"><span id="flytt-antall" style="font-size:.85rem;font-weight:700;color:var(--barn)">0 valgt</span><div style="display:flex;gap:.4rem"><button class="btn bm sm" onclick="openFlyttModal()">📍 Flytt</button><button class="btn bg sm" onclick="avbrytFlytt()">Avbryt</button></div></div>
   <div class="filter-row">
     <button class="fb on" data-f="alle" onclick="kFilter(this)">Alle</button>
     <button class="fb" data-f="heifer" onclick="kFilter(this)">Kviger</button>
@@ -231,6 +235,12 @@ tr:last-child td{border-bottom:none}tr:hover td{background:#FAF5EC}
     <div class="stile grn"><div class="n" id="r-kv">0</div><div class="l">Kviger</div></div>
     <div class="stile"><div class="n" id="r-ok">0</div><div class="l">Okser</div></div>
   </div>
+  <div class="card"><h3>📈 Vektutvikling</h3>
+    <div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:.6rem"><button class="fb on" onclick="grafFilter(this,'alle')" data-gf="alle">Alle</button><button class="fb" onclick="grafFilter(this,'NRF')" data-gf="NRF">NRF</button><button class="fb" onclick="grafFilter(this,'Blondé')" data-gf="Blondé">Blondé</button><button class="fb" onclick="grafFilter(this,'Limousin')" data-gf="Limousin">Limousin</button><button class="fb" onclick="grafFilter(this,'Angus')" data-gf="Angus">Angus</button></div>
+    <canvas id="graf-vekt" style="width:100%;max-height:280px"></canvas>
+    <p id="graf-ingen" style="display:none;font-size:.85rem;color:var(--muted);text-align:center;padding:1rem">Ingen vektdata ennå</p>
+  </div>
+  <div class="card"><h3>⚠️ Veiing forfalt</h3><div id="r-vekt-varsel"></div></div>
   <div class="card"><h3>📅 Siste 30 dager</h3><div id="r-recent"></div></div>
   <div class="card"><h3>🩺 Sykdomshistorikk</h3><div id="r-syk"></div></div>
   <div class="card"><h3>🐄 Alle kalver</h3><div id="r-all"></div></div>
@@ -291,123 +301,8 @@ tr:last-child td{border-bottom:none}tr:hover td{background:#FAF5EC}
 
 <div id="s-smokk" class="sec"><main>
   <button class="btn bg sm" onclick="navTo('hjem')" style="margin-bottom:.9rem">← Hjem</button>
-  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.8rem">
-
-    <div class="card" style="text-align:center;padding:1rem .8rem">
-      <img src="" style="width:80px;height:80px;object-fit:contain;margin-bottom:.6rem">
-      <div style="font-family:'Fraunces',serif;font-weight:700;color:var(--barn);margin-bottom:.5rem;font-size:.95rem">Flaske</div>
-      <div style="display:flex;gap:.4rem;justify-content:center;margin-bottom:.6rem">
-        <button onclick="setSmokk('flaske','aktiv',this)" data-k="flaske" data-v="aktiv" class="smokk-btn" style="padding:.3rem .7rem;border-radius:20px;font-size:.8rem;cursor:pointer;border:2px solid var(--border);background:var(--milk);font-weight:400">✅ Aktiv</button>
-        <button onclick="setSmokk('flaske','passiv',this)" data-k="flaske" data-v="passiv" class="smokk-btn" style="padding:.3rem .7rem;border-radius:20px;font-size:.8rem;cursor:pointer;border:2px solid var(--border);background:var(--milk);font-weight:400">⏸️ Passiv</button>
-      </div>
-      <div style="font-size:.75rem;color:var(--muted);margin-bottom:.3rem">Smokk byttet:</div>
-      <div style="display:flex;gap:.3rem;align-items:center;justify-content:center">
-        <input type="date" id="smokk-dato-flaske" style="font-size:.78rem;padding:.2rem .4rem;border:1px solid var(--border);border-radius:6px;background:var(--milk);min-height:auto;width:auto">
-        <button onclick="lagreSmokk('flaske')" style="padding:.2rem .5rem;border-radius:6px;font-size:.78rem;cursor:pointer;border:none;background:var(--moss);color:#fff;font-weight:700">💾</button>
-      </div>
-      <div id="smokk-status-flaske" style="font-size:.75rem;color:var(--muted);margin-top:.3rem"></div>
-    </div>
-    <div class="card" style="text-align:center;padding:1rem .8rem">
-      <img src="" style="width:80px;height:80px;object-fit:contain;margin-bottom:.6rem">
-      <div style="font-family:'Fraunces',serif;font-weight:700;color:var(--barn);margin-bottom:.5rem;font-size:.95rem">Grå enkelkopp</div>
-      <div style="display:flex;gap:.4rem;justify-content:center;margin-bottom:.6rem">
-        <button onclick="setSmokk('gra_enkel','aktiv',this)" data-k="gra_enkel" data-v="aktiv" class="smokk-btn" style="padding:.3rem .7rem;border-radius:20px;font-size:.8rem;cursor:pointer;border:2px solid var(--border);background:var(--milk);font-weight:400">✅ Aktiv</button>
-        <button onclick="setSmokk('gra_enkel','passiv',this)" data-k="gra_enkel" data-v="passiv" class="smokk-btn" style="padding:.3rem .7rem;border-radius:20px;font-size:.8rem;cursor:pointer;border:2px solid var(--border);background:var(--milk);font-weight:400">⏸️ Passiv</button>
-      </div>
-      <div style="font-size:.75rem;color:var(--muted);margin-bottom:.3rem">Smokk byttet:</div>
-      <div style="display:flex;gap:.3rem;align-items:center;justify-content:center">
-        <input type="date" id="smokk-dato-gra_enkel" style="font-size:.78rem;padding:.2rem .4rem;border:1px solid var(--border);border-radius:6px;background:var(--milk);min-height:auto;width:auto">
-        <button onclick="lagreSmokk('gra_enkel')" style="padding:.2rem .5rem;border-radius:6px;font-size:.78rem;cursor:pointer;border:none;background:var(--moss);color:#fff;font-weight:700">💾</button>
-      </div>
-      <div id="smokk-status-gra_enkel" style="font-size:.75rem;color:var(--muted);margin-top:.3rem"></div>
-    </div>
-    <div class="card" style="text-align:center;padding:1rem .8rem">
-      <img src="" style="width:80px;height:80px;object-fit:contain;margin-bottom:.6rem">
-      <div style="font-family:'Fraunces',serif;font-weight:700;color:var(--barn);margin-bottom:.5rem;font-size:.95rem">Grå dobbeltkopp</div>
-      <div style="display:flex;gap:.4rem;justify-content:center;margin-bottom:.6rem">
-        <button onclick="setSmokk('gra_dobbel','aktiv',this)" data-k="gra_dobbel" data-v="aktiv" class="smokk-btn" style="padding:.3rem .7rem;border-radius:20px;font-size:.8rem;cursor:pointer;border:2px solid var(--border);background:var(--milk);font-weight:400">✅ Aktiv</button>
-        <button onclick="setSmokk('gra_dobbel','passiv',this)" data-k="gra_dobbel" data-v="passiv" class="smokk-btn" style="padding:.3rem .7rem;border-radius:20px;font-size:.8rem;cursor:pointer;border:2px solid var(--border);background:var(--milk);font-weight:400">⏸️ Passiv</button>
-      </div>
-      <div style="font-size:.75rem;color:var(--muted);margin-bottom:.3rem">Smokk byttet:</div>
-      <div style="display:flex;gap:.3rem;align-items:center;justify-content:center">
-        <input type="date" id="smokk-dato-gra_dobbel" style="font-size:.78rem;padding:.2rem .4rem;border:1px solid var(--border);border-radius:6px;background:var(--milk);min-height:auto;width:auto">
-        <button onclick="lagreSmokk('gra_dobbel')" style="padding:.2rem .5rem;border-radius:6px;font-size:.78rem;cursor:pointer;border:none;background:var(--moss);color:#fff;font-weight:700">💾</button>
-      </div>
-      <div id="smokk-status-gra_dobbel" style="font-size:.75rem;color:var(--muted);margin-top:.3rem"></div>
-    </div>
-    <div class="card" style="text-align:center;padding:1rem .8rem">
-      <img src="" style="width:80px;height:80px;object-fit:contain;margin-bottom:.6rem">
-      <div style="font-family:'Fraunces',serif;font-weight:700;color:var(--barn);margin-bottom:.5rem;font-size:.95rem">Grå 5'er bar</div>
-      <div style="display:flex;gap:.4rem;justify-content:center;margin-bottom:.6rem">
-        <button onclick="setSmokk('gra_5','aktiv',this)" data-k="gra_5" data-v="aktiv" class="smokk-btn" style="padding:.3rem .7rem;border-radius:20px;font-size:.8rem;cursor:pointer;border:2px solid var(--border);background:var(--milk);font-weight:400">✅ Aktiv</button>
-        <button onclick="setSmokk('gra_5','passiv',this)" data-k="gra_5" data-v="passiv" class="smokk-btn" style="padding:.3rem .7rem;border-radius:20px;font-size:.8rem;cursor:pointer;border:2px solid var(--border);background:var(--milk);font-weight:400">⏸️ Passiv</button>
-      </div>
-      <div style="font-size:.75rem;color:var(--muted);margin-bottom:.3rem">Smokk byttet:</div>
-      <div style="display:flex;gap:.3rem;align-items:center;justify-content:center">
-        <input type="date" id="smokk-dato-gra_5" style="font-size:.78rem;padding:.2rem .4rem;border:1px solid var(--border);border-radius:6px;background:var(--milk);min-height:auto;width:auto">
-        <button onclick="lagreSmokk('gra_5')" style="padding:.2rem .5rem;border-radius:6px;font-size:.78rem;cursor:pointer;border:none;background:var(--moss);color:#fff;font-weight:700">💾</button>
-      </div>
-      <div id="smokk-status-gra_5" style="font-size:.75rem;color:var(--muted);margin-top:.3rem"></div>
-    </div>
-    <div class="card" style="text-align:center;padding:1rem .8rem">
-      <img src="" style="width:80px;height:80px;object-fit:contain;margin-bottom:.6rem">
-      <div style="font-family:'Fraunces',serif;font-weight:700;color:var(--barn);margin-bottom:.5rem;font-size:.95rem">Grå 6'er bar</div>
-      <div style="display:flex;gap:.4rem;justify-content:center;margin-bottom:.6rem">
-        <button onclick="setSmokk('gra_6','aktiv',this)" data-k="gra_6" data-v="aktiv" class="smokk-btn" style="padding:.3rem .7rem;border-radius:20px;font-size:.8rem;cursor:pointer;border:2px solid var(--border);background:var(--milk);font-weight:400">✅ Aktiv</button>
-        <button onclick="setSmokk('gra_6','passiv',this)" data-k="gra_6" data-v="passiv" class="smokk-btn" style="padding:.3rem .7rem;border-radius:20px;font-size:.8rem;cursor:pointer;border:2px solid var(--border);background:var(--milk);font-weight:400">⏸️ Passiv</button>
-      </div>
-      <div style="font-size:.75rem;color:var(--muted);margin-bottom:.3rem">Smokk byttet:</div>
-      <div style="display:flex;gap:.3rem;align-items:center;justify-content:center">
-        <input type="date" id="smokk-dato-gra_6" style="font-size:.78rem;padding:.2rem .4rem;border:1px solid var(--border);border-radius:6px;background:var(--milk);min-height:auto;width:auto">
-        <button onclick="lagreSmokk('gra_6')" style="padding:.2rem .5rem;border-radius:6px;font-size:.78rem;cursor:pointer;border:none;background:var(--moss);color:#fff;font-weight:700">💾</button>
-      </div>
-      <div id="smokk-status-gra_6" style="font-size:.75rem;color:var(--muted);margin-top:.3rem"></div>
-    </div>
-    <div class="card" style="text-align:center;padding:1rem .8rem">
-      <img src="" style="width:80px;height:80px;object-fit:contain;margin-bottom:.6rem">
-      <div style="font-family:'Fraunces',serif;font-weight:700;color:var(--barn);margin-bottom:.5rem;font-size:.95rem">Grå 10'er bar</div>
-      <div style="display:flex;gap:.4rem;justify-content:center;margin-bottom:.6rem">
-        <button onclick="setSmokk('gra_10','aktiv',this)" data-k="gra_10" data-v="aktiv" class="smokk-btn" style="padding:.3rem .7rem;border-radius:20px;font-size:.8rem;cursor:pointer;border:2px solid var(--border);background:var(--milk);font-weight:400">✅ Aktiv</button>
-        <button onclick="setSmokk('gra_10','passiv',this)" data-k="gra_10" data-v="passiv" class="smokk-btn" style="padding:.3rem .7rem;border-radius:20px;font-size:.8rem;cursor:pointer;border:2px solid var(--border);background:var(--milk);font-weight:400">⏸️ Passiv</button>
-      </div>
-      <div style="font-size:.75rem;color:var(--muted);margin-bottom:.3rem">Smokk byttet:</div>
-      <div style="display:flex;gap:.3rem;align-items:center;justify-content:center">
-        <input type="date" id="smokk-dato-gra_10" style="font-size:.78rem;padding:.2rem .4rem;border:1px solid var(--border);border-radius:6px;background:var(--milk);min-height:auto;width:auto">
-        <button onclick="lagreSmokk('gra_10')" style="padding:.2rem .5rem;border-radius:6px;font-size:.78rem;cursor:pointer;border:none;background:var(--moss);color:#fff;font-weight:700">💾</button>
-      </div>
-      <div id="smokk-status-gra_10" style="font-size:.75rem;color:var(--muted);margin-top:.3rem"></div>
-    </div>
-    <div class="card" style="text-align:center;padding:1rem .8rem">
-      <img src="" style="width:80px;height:80px;object-fit:contain;margin-bottom:.6rem">
-      <div style="font-family:'Fraunces',serif;font-weight:700;color:var(--barn);margin-bottom:.5rem;font-size:.95rem">Blå kopp – rød smokk</div>
-      <div style="display:flex;gap:.4rem;justify-content:center;margin-bottom:.6rem">
-        <button onclick="setSmokk('bla_rod','aktiv',this)" data-k="bla_rod" data-v="aktiv" class="smokk-btn" style="padding:.3rem .7rem;border-radius:20px;font-size:.8rem;cursor:pointer;border:2px solid var(--border);background:var(--milk);font-weight:400">✅ Aktiv</button>
-        <button onclick="setSmokk('bla_rod','passiv',this)" data-k="bla_rod" data-v="passiv" class="smokk-btn" style="padding:.3rem .7rem;border-radius:20px;font-size:.8rem;cursor:pointer;border:2px solid var(--border);background:var(--milk);font-weight:400">⏸️ Passiv</button>
-      </div>
-      <div style="font-size:.75rem;color:var(--muted);margin-bottom:.3rem">Smokk byttet:</div>
-      <div style="display:flex;gap:.3rem;align-items:center;justify-content:center">
-        <input type="date" id="smokk-dato-bla_rod" style="font-size:.78rem;padding:.2rem .4rem;border:1px solid var(--border);border-radius:6px;background:var(--milk);min-height:auto;width:auto">
-        <button onclick="lagreSmokk('bla_rod')" style="padding:.2rem .5rem;border-radius:6px;font-size:.78rem;cursor:pointer;border:none;background:var(--moss);color:#fff;font-weight:700">💾</button>
-      </div>
-      <div id="smokk-status-bla_rod" style="font-size:.75rem;color:var(--muted);margin-top:.3rem"></div>
-    </div>
-    <div class="card" style="text-align:center;padding:1rem .8rem">
-      <img src="" style="width:80px;height:80px;object-fit:contain;margin-bottom:.6rem">
-      <div style="font-family:'Fraunces',serif;font-weight:700;color:var(--barn);margin-bottom:.5rem;font-size:.95rem">Blå kopp – svart smokk</div>
-      <div style="display:flex;gap:.4rem;justify-content:center;margin-bottom:.6rem">
-        <button onclick="setSmokk('bla_svart','aktiv',this)" data-k="bla_svart" data-v="aktiv" class="smokk-btn" style="padding:.3rem .7rem;border-radius:20px;font-size:.8rem;cursor:pointer;border:2px solid var(--border);background:var(--milk);font-weight:400">✅ Aktiv</button>
-        <button onclick="setSmokk('bla_svart','passiv',this)" data-k="bla_svart" data-v="passiv" class="smokk-btn" style="padding:.3rem .7rem;border-radius:20px;font-size:.8rem;cursor:pointer;border:2px solid var(--border);background:var(--milk);font-weight:400">⏸️ Passiv</button>
-      </div>
-      <div style="font-size:.75rem;color:var(--muted);margin-bottom:.3rem">Smokk byttet:</div>
-      <div style="display:flex;gap:.3rem;align-items:center;justify-content:center">
-        <input type="date" id="smokk-dato-bla_svart" style="font-size:.78rem;padding:.2rem .4rem;border:1px solid var(--border);border-radius:6px;background:var(--milk);min-height:auto;width:auto">
-        <button onclick="lagreSmokk('bla_svart')" style="padding:.2rem .5rem;border-radius:6px;font-size:.78rem;cursor:pointer;border:none;background:var(--moss);color:#fff;font-weight:700">💾</button>
-      </div>
-      <div id="smokk-status-bla_svart" style="font-size:.75rem;color:var(--muted);margin-top:.3rem"></div>
-    </div>
-  </div>
+  <div id="smokk-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.8rem"></div>
 </main></div>
-
 <div id="s-notat" class="sec"><main>
   <button class="btn bg sm" onclick="navTo('hjem')" style="margin-bottom:.9rem">← Hjem</button>
   <button class="btn bm sm" onclick="openM('m-notat-ny')" style="margin-bottom:.9rem">＋ Nytt notat</button>
@@ -436,6 +331,11 @@ tr:last-child td{border-bottom:none}tr:hover td{background:#FAF5EC}
   <button class="nb" onclick="navTo('mer')"><span class="i">•••</span><span class="l">Mer</span></button>
 </nav>
 
+<div class="mo" id="m-flytt-binge"><div class="modal"><div class="mh"></div><h2>📍 Flytt til binge</h2>
+  <p id="flytt-modal-info" style="font-size:.85rem;color:var(--muted);margin-bottom:.8rem"></p>
+  <div class="fg"><label>Velg binge/boks</label><select id="flytt-binge-valg" style="width:100%"></select></div>
+  <div class="ma"><button class="btn bg" onclick="closeM('m-flytt-binge')">Avbryt</button><button class="btn bm" onclick="doFlyttTilBinge()">📍 Flytt</button></div>
+</div></div>
 <div class="mo" id="m-import"><div class="modal"><div class="mh"></div><h2>📥 Importer kalver fra Excel</h2>
   <p style="font-size:.85rem;color:var(--muted);margin-bottom:.9rem">Kolonner: <strong>Øremerke, Navn, Fødselsdato, Kjønn, Rase, Mor, Binge</strong>. Øremerke brukes for å unngå duplikater.</p>
   <div class="fg"><button class="btn bg sm" onclick="lastNedMal()">📋 Last ned mal</button></div>
@@ -659,7 +559,7 @@ const getStats=()=>{const cs=getCalves(),a=cs.filter(c=>c.status!=='utrangert');
 const getTaxi=()=>L('taxi',[]);
 const addTaxi=o=>{const a=getTaxi();a.unshift({id:uid(),date:today(),...o});S('taxi',a)};
 const delTaxi=id=>S('taxi',getTaxi().filter(e=>e.id!==id));
-const $=function(id){var el=document.getElementById(id);if(!el){return {style:{},classList:{add:function(){},remove:function(){},contains:function(){return false;}},value:'',textContent:'',innerHTML:'',scrollTop:0,appendChild:function(){},focus:function(){}};}return el;};
+const $=id=>document.getElementById(id);
 let currentCalfId=null,kFilterVal='alle',mFilterVal='alle',tlFilterVal='alle';
 const navMap={hjem:'s-hjem',kalver:'s-kalver',kalvkort:'s-kalvkort',ungdyr:'s-ungdyr',melk:'s-melk',fjos:'s-fjos',sykdom:'s-sykdom',mer:'s-mer',rapport:'s-rapport',avloser:'s-avloser',tidslinje:'s-tidslinje',smokk:'s-smokk',notat:'s-notat',melketaxi:'s-melketaxi'};
 const navBtns={hjem:0,fjos:1,melk:2,sykdom:3,mer:4,kalvkort:4,ungdyr:4,kalver:4,rapport:4,avloser:4,tidslinje:4,smokk:0,notat:4,melketaxi:0};
@@ -779,7 +679,7 @@ function doBarnCustom(){const desc=$('bc-desc').value.trim();if(!desc){toast('Be
 function renderSykdom(){const sick=getCalves().filter(c=>c.status==='sick');const ae=$('syk-active');if(!sick.length){ae.innerHTML=`<div class="card" style="border-color:var(--moss);background:var(--mossL)"><p style="color:var(--moss);font-weight:700">✅ Ingen syke kalver nå</p></div>`}else{ae.innerHTML=sick.map(c=>{const ev=getEvs(c.id).find(e=>e.type==='sykdom');return`<div class="card" style="border-left:4px solid var(--rust);background:#FFF5F3;margin-bottom:.7rem"><div style="display:flex;justify-content:space-between;align-items:flex-start"><strong onclick="navTo('kalvkort','${c.id}')" style="cursor:pointer;color:var(--barn)">${c.name||c.earTag||'Kalv'}</strong><span style="font-size:.77rem;color:var(--muted)">${ageStr(c.born)||''}</span></div>${ev?`<div style="font-size:.83rem;color:var(--muted);margin:.3rem 0">${fmtD(ev.date)}${ev.diag?' · '+ev.diag:''}${ev.treatment?' · '+ev.treatment:''}</div>`:''}<div style="display:flex;gap:.5rem;margin-top:.5rem"><button class="btn bm sm" onclick="doFriskmeldtId('${c.id}')">✅ Friskmeldt</button><button class="btn bg sm" onclick="navTo('kalvkort','${c.id}')">→ Kalvkort</button></div></div>`}).join('')}const all=getAllEvs().filter(e=>['sykdom','frisk'].includes(e.type)).sort((a,b)=>b.date.localeCompare(a.date));$('syk-log').innerHTML=all.length?'<div class="tl">'+all.map(ev=>{const ic=ev.type==='frisk'?'✅':'🔴';const sub=[ev.diag,ev.treatment,ev.note].filter(Boolean).join(' · ');return`<div class="te ${ev.type}"><div class="td">${fmtD(ev.date)}</div><div class="tt">${ic} ${ev.title||ev.type} – <span onclick="navTo('kalvkort','${ev.calfId}')" style="color:var(--barn);cursor:pointer">${ev.calfName||ev.earTag||''}</span></div>${sub?`<div class="ts">${sub}</div>`:''}</div>`}).join('')+'</div>':'<div class="empty"><div class="ei">🩺</div><p>Ingen sykdomshendelser</p></div>'}
 function doFriskmeldtId(id){updateCalf(id,{status:'ok'});addEv_(id,{type:'frisk',date:today(),title:'Friskmeldt'});toast('Friskmeldt ✅');renderSykdom();renderHjem()}
 function doRegSyk(){var id=$('rs-calf').value;if(!id)return;var treat=getTreatText('rs');updateCalf(id,{status:'sick'});addEv_(id,{type:'sykdom',date:$('rs-d').value||today(),title:'Sykdom',diag:$('rs-diag').value,treatment:treat,note:($('rs-temp').value?'Temp: '+$('rs-temp').value+'°C ':'')+$('rs-n').value.trim()});closeM('m-regsyk');toast('Sykdom registrert 🔴');['rs-temp','rs-ab-ml','rs-n'].forEach(function(i){var el=$(i);if(el)el.value='';});$('rs-diag').value='';document.querySelectorAll('.rs-diag-btn,.rs-treat-btn').forEach(function(b){b.style.background='';b.style.color='';b.style.fontWeight='';});if($('rs-ab-row'))$('rs-ab-row').style.display='none';renderSykdom();renderHjem();}
-function renderRapport(){const s=getSet();$('r-title').textContent=s.farmName||'Kalvekontroll';$('r-date').textContent='Generert: '+new Date().toLocaleString('nb-NO');const st=getStats();$('r-tot').textContent=st.total;$('r-sik').textContent=st.sick;$('r-kv').textContent=st.heifers;$('r-ok').textContent=st.bulls;const cut=new Date();cut.setDate(cut.getDate()-30);const cutStr=cut.toISOString().slice(0,10);const all=getAllEvs().sort((a,b)=>b.date.localeCompare(a.date));const rec=all.filter(e=>e.date>=cutStr).slice(0,25);$('r-recent').innerHTML=rec.length?`<table><thead><tr><th>Dato</th><th>Kalv</th><th>Hendelse</th></tr></thead><tbody>${rec.map(e=>`<tr><td>${fmtD(e.date)}</td><td><span onclick="navTo('kalvkort','${e.calfId}')" style="color:var(--barn);cursor:pointer">${e.calfName||'–'}</span></td><td>${EVICONS[e.type]||'📌'} ${e.title||e.type}${e.value?' – '+e.value+(e.unit||''):''}</td></tr>`).join('')}</tbody></table>`:'<p style="font-size:.85rem;color:var(--muted)">Ingen hendelser siste 30 dager</p>';const syke=all.filter(e=>e.type==='sykdom').slice(0,20);$('r-syk').innerHTML=syke.length?`<table><thead><tr><th>Dato</th><th>Kalv</th><th>Diagnose</th><th>Behandling</th></tr></thead><tbody>${syke.map(e=>`<tr><td>${fmtD(e.date)}</td><td>${e.calfName||'–'}</td><td>${e.diag||'–'}</td><td>${e.treatment||'–'}</td></tr>`).join('')}</tbody></table>`:'<p style="font-size:.85rem;color:var(--muted)">Ingen sykdommer</p>';const aktive=getCalves().filter(c=>c.status!=='utrangert');$('r-all').innerHTML=aktive.length?`<table><thead><tr><th>Navn</th><th>Alder</th><th>Binge</th><th>Status</th></tr></thead><tbody>${aktive.map(c=>`<tr><td><span onclick="navTo('kalvkort','${c.id}')" style="color:var(--barn);font-weight:600;cursor:pointer">${c.name||c.earTag||'–'}</span></td><td>${ageStr(c.born)||'–'}</td><td>${c.pen||'–'}</td><td>${c.status==='sick'?'<span class="badge b-sick">Syk</span>':'<span class="badge b-ok">OK</span>'}</td></tr>`).join('')}</tbody></table>`:'<p style="font-size:.85rem;color:var(--muted)">Ingen kalver</p>'}
+function renderRapport(){renderGrafVekt();renderVektVarselRapport();const s=getSet();$('r-title').textContent=s.farmName||'Kalvekontroll';$('r-date').textContent='Generert: '+new Date().toLocaleString('nb-NO');const st=getStats();$('r-tot').textContent=st.total;$('r-sik').textContent=st.sick;$('r-kv').textContent=st.heifers;$('r-ok').textContent=st.bulls;const cut=new Date();cut.setDate(cut.getDate()-30);const cutStr=cut.toISOString().slice(0,10);const all=getAllEvs().sort((a,b)=>b.date.localeCompare(a.date));const rec=all.filter(e=>e.date>=cutStr).slice(0,25);$('r-recent').innerHTML=rec.length?`<table><thead><tr><th>Dato</th><th>Kalv</th><th>Hendelse</th></tr></thead><tbody>${rec.map(e=>`<tr><td>${fmtD(e.date)}</td><td><span onclick="navTo('kalvkort','${e.calfId}')" style="color:var(--barn);cursor:pointer">${e.calfName||'–'}</span></td><td>${EVICONS[e.type]||'📌'} ${e.title||e.type}${e.value?' – '+e.value+(e.unit||''):''}</td></tr>`).join('')}</tbody></table>`:'<p style="font-size:.85rem;color:var(--muted)">Ingen hendelser siste 30 dager</p>';const syke=all.filter(e=>e.type==='sykdom').slice(0,20);$('r-syk').innerHTML=syke.length?`<table><thead><tr><th>Dato</th><th>Kalv</th><th>Diagnose</th><th>Behandling</th></tr></thead><tbody>${syke.map(e=>`<tr><td>${fmtD(e.date)}</td><td>${e.calfName||'–'}</td><td>${e.diag||'–'}</td><td>${e.treatment||'–'}</td></tr>`).join('')}</tbody></table>`:'<p style="font-size:.85rem;color:var(--muted)">Ingen sykdommer</p>';const aktive=getCalves().filter(c=>c.status!=='utrangert');$('r-all').innerHTML=aktive.length?`<table><thead><tr><th>Navn</th><th>Alder</th><th>Binge</th><th>Status</th></tr></thead><tbody>${aktive.map(c=>`<tr><td><span onclick="navTo('kalvkort','${c.id}')" style="color:var(--barn);font-weight:600;cursor:pointer">${c.name||c.earTag||'–'}</span></td><td>${ageStr(c.born)||'–'}</td><td>${c.pen||'–'}</td><td>${c.status==='sick'?'<span class="badge b-sick">Syk</span>':'<span class="badge b-ok">OK</span>'}</td></tr>`).join('')}</tbody></table>`:'<p style="font-size:.85rem;color:var(--muted)">Ingen kalver</p>'}
 function renderAvloser(){
   var ho=getHO();
   $('av-note').value=ho.notes||'';
@@ -833,7 +733,7 @@ function avSave(){const ho=getHO();ho.notes=$('av-note').value;saveHO(ho);toast(
 function avAddTask(){const inp=$('av-newtask'),t=inp.value.trim();if(!t)return;const ho=getHO();ho.tasks=[...(ho.tasks||[]),{text:t,done:false}];saveHO(ho);inp.value='';renderAvloser()}
 function avToggle(i){const ho=getHO();ho.tasks[i].done=!ho.tasks[i].done;saveHO(ho);renderAvloser()}
 function avDel(i){const ho=getHO();ho.tasks.splice(i,1);saveHO(ho);renderAvloser()}
-var _ant=document.getElementById('av-newtask');if(_ant)_ant.addEventListener('keydown',function(e){if(e.key==='Enter')avAddTask();});
+var _ant=$('av-newtask');if(_ant)_ant.addEventListener('keydown',function(e){if(e.key==='Enter')avAddTask();});
 function tlFilter(btn){document.querySelectorAll('#s-tidslinje .fb').forEach(b=>b.classList.remove('on'));btn.classList.add('on');tlFilterVal=btn.dataset.f;renderTidslinje()}
 function renderTidslinje(){let evs=getAllEvs().sort((a,b)=>b.date.localeCompare(a.date));if(tlFilterVal!=='alle')evs=evs.filter(e=>e.type===tlFilterVal);if(!evs.length){$('tl-content').innerHTML='<div class="empty"><div class="ei">📅</div><p>Ingen hendelser</p></div>';return}const byDate={};evs.forEach(e=>{if(!byDate[e.date])byDate[e.date]=[];byDate[e.date].push(e)});$('tl-content').innerHTML=Object.keys(byDate).sort((a,b)=>b.localeCompare(a)).map(d=>`<div style="font-size:.77rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:1rem 0 .4rem">${fmtD(d)}</div><div class="tl">${byDate[d].map(ev=>{const sub=[ev.note,ev.diag,ev.treatment,ev.value?ev.value+(ev.unit||''):''].filter(Boolean).join(' · ');return`<div class="te ${ev.type}"><div class="tt">${EVICONS[ev.type]||'📌'} ${ev.title||ev.type} – <span onclick="navTo('kalvkort','${ev.calfId}')" style="color:var(--barn);cursor:pointer">${ev.calfName||ev.earTag||''}</span></div>${sub?`<div class="ts">${sub}</div>`:''}</div>`}).join('')}</div>`).join('')}
 function renderSmokkSide(){const cs=getCalves().filter(c=>c.status!=='utrangert');$('smokk-grid').innerHTML=cs.length?cs.map(c=>{const evs=getEvs(c.id).filter(e=>e.type==='smokk');return`<div class="card" style="margin-bottom:0"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem"><span onclick="navTo('kalvkort','${c.id}')" style="font-family:Fraunces,serif;color:var(--barn);cursor:pointer">${c.name||c.earTag||'Kalv'}</span><button class="btn bm sm" onclick="doSmokk('${c.id}')">+ Reg</button></div>${evs.length?evs.slice(0,4).map(e=>`<div style="font-size:.8rem;color:var(--muted);padding:.18rem 0;border-bottom:1px solid var(--border)">🍼 ${fmtD(e.date)}${e.note?' – '+e.note:''}</div>`).join(''):'<p style="font-size:.8rem;color:var(--muted)">Ingen smokk-hendelser</p>'}</div>`}).join(''):'<div class="empty"><div class="ei">🍼</div><p>Ingen kalver</p></div>'}
@@ -897,7 +797,7 @@ function checkAlerts(){
 // ======== BRUKERVALG ========
 let aktivBruker=localStorage.getItem('kk_bruker')||'Brit-Ellen';
 function getAktivBruker(){return aktivBruker;}
-function settBruker(navn){aktivBruker=navn;localStorage.setItem('kk_bruker',navn);var vis=$('set-bruker-vis');if(vis)vis.textContent=navn;renderHjem();}
+function settBruker(navn){aktivBruker=navn;localStorage.setItem('kk_bruker',navn);var vis=$('set-bruker-vis');if(vis)vis.textContent=navn;}
 
 // ======== ENDRINGSLOGG ========
 
@@ -942,7 +842,7 @@ async function syncFromSupabase(){
     const calves=await supabaseFetch('calves');
     const barn=await supabaseFetch('barn');
     const taxi=await supabaseFetch('taxi');
-    if(calves!==null)localStorage.setItem('kk_calves',JSON.stringify(calves));
+    if(calves!==null){var localC=JSON.parse(localStorage.getItem('kk_calves')||'[]');var merged=calves.map(function(c){var loc=localC.find(function(l){return l.id===c.id;});if(loc&&loc.earTag&&!c.earTag)c.earTag=loc.earTag;return c;});localStorage.setItem('kk_calves',JSON.stringify(merged));}
     if(barn!==null)localStorage.setItem('kk_barn',JSON.stringify(barn));
     if(taxi!==null)localStorage.setItem('kk_taxi',JSON.stringify(taxi));
     // sync per-calf events
@@ -994,7 +894,6 @@ setInterval(()=>syncFromSupabase(),30000);
 // Push to cloud whenever calves change
 
 (()=>{
-  console.log('INIT START');
   const s=getSet();
   $('hdr-title').textContent=s.farmName||'Brit-Ellens kalvekontroll';
   $('set-farm').value=s.farmName||'';
@@ -1017,9 +916,7 @@ setInterval(()=>syncFromSupabase(),30000);
   // Store defaults if not set
   if(!localStorage.getItem('sb_url'))localStorage.setItem('sb_url',SB_URL);
   if(!localStorage.getItem('sb_key'))localStorage.setItem('sb_key',SB_KEY);
-  console.log('Calling renderHjem...');
   renderHjem();
-  var _shj=document.getElementById('s-hjem'); console.log('s-hjem element:', _shj, 'class:', _shj ? _shj.className : 'NULL'); if(_shj){console.log('s-hjem display:', window.getComputedStyle(_shj).display); console.log('main children:', _shj.querySelector('main') ? 'exists' : 'missing');}
   checkAlerts();
   // Migrer gamle kjønnskoder
   var _cs=L('calves',[]);var _changed=false;
@@ -1030,7 +927,7 @@ setInterval(()=>syncFromSupabase(),30000);
   syncFromSupabase();
 })();
 
-function renderHjem(){console.log('renderHjem running');var st=getStats();console.log('stats:', JSON.stringify(st));$('st-tot').textContent=st.total;$('st-gen').textContent=st.heifers+' kviger · '+st.bulls+' okser';$('st-sick').textContent=st.sick;$('st-ung').textContent=st.ungdyr;$('st-ung-gen').textContent=st.ungKviger+' kviger · '+st.ungOkser+' okser';var t=$('t-sick');if(st.sick>0){t.className='stile red';$('st-sick-l').textContent=st.sick===1?'1 syk kalv':st.sick+' syke';}else{t.className='stile ok';$('st-sick-l').textContent='Ingen syke nå';}var al=[];if(st.sick)al.push('🔴 '+st.sick+' kalv(er) trenger behandling');$('hjem-alerts').innerHTML=al.length?'<div class="card" style="border-left:4px solid var(--rust);background:#FFF5F3;margin-top:.5rem">'+al.map(function(x){return'<div style="font-size:.87rem;color:#7A5000;padding:.2rem 0">'+x+'</div>';}).join('')+'</div>':'';}
+function renderHjem(){var st=getStats();$('st-tot').textContent=st.total;$('st-gen').textContent=st.heifers+' kviger · '+st.bulls+' okser';$('st-sick').textContent=st.sick;if($('st-ung'))$('st-ung').textContent=st.ungdyr;if($('st-ung-gen'))$('st-ung-gen').textContent=st.ungKviger+' kviger · '+st.ungOkser+' okser';var t=$('t-sick');if(st.sick>0){t.className='stile red';$('st-sick-l').textContent=st.sick===1?'1 syk kalv':st.sick+' syke';}else{t.className='stile ok';$('st-sick-l').textContent='Ingen syke nå';}var al=[];if(st.sick)al.push('🔴 '+st.sick+' kalv(er) trenger behandling');$('hjem-alerts').innerHTML=al.length?'<div class="card" style="border-left:4px solid var(--rust);background:#FFF5F3;margin-top:.5rem">'+al.map(function(x){return'<div style="font-size:.87rem;color:#7A5000;padding:.2rem 0">'+x+'</div>';}).join('')+'</div>':'';}
 
 function renderUngdyr(){var cs=getCalves().filter(function(c){var d=c.born?daysBetween(c.born,today()):null;return c.status!=='utrangert'&&d!==null&&d>=90&&d<180;});var g=$('ung-grid'),e=$('ung-empty');if(!cs.length){g.innerHTML='';e.style.display='';return;}e.style.display='none';var html='';cs.forEach(function(c){var age=ageStr(c.born);var sexB=c.sex==='bull'?'<span class="badge b-bull">Okse</span>':'<span class="badge b-cow">Kvige</span>';var sickB=c.status==='sick'?'<span class="badge b-sick">Syk</span>':'';html+='<div class="cc sg" data-id="'+c.id+'">'+'<div class="ch"><div class="cn">'+(c.earTag?'<span style="color:var(--muted);font-size:.85rem;font-weight:600">'+c.earTag+' </span>':'')+(c.name||'(uten navn)')+'</div><div style="display:flex;gap:.25rem">'+sexB+sickB+'</div></div>'+'<div class="cm">'+(c.born?'<div>'+fmtD(c.born)+(age?' · '+age:'')+'</div>':'')+(c.pen?'<div>'+c.pen+'</div>':'')+'</div></div>';});g.innerHTML=html;g.querySelectorAll('[data-id]').forEach(function(el){el.addEventListener('click',function(){navTo('kalvkort',this.dataset.id);});});}
 
@@ -1168,6 +1065,7 @@ function skrivUtAvloser(){
   var html='<div style="font-family:DM Sans,sans-serif;font-size:13px;line-height:1.5;color:#1E1206">';
   html+='<h2 style="font-family:Fraunces,serif;font-size:18px;margin:0 0 2px">📋 Avløserinstruks – '+(s.farmName||'')+'</h2>';
   html+='<p style="color:#7A5C3A;font-size:11px;margin:0 0 10px">'+dato+'</p>';
+  var txSiste=getTaxi().slice(0,6);html+='<div style="background:#E8F1FF;border:1.5px solid #90BEE8;border-radius:10px;padding:10px 14px;margin-bottom:12px"><strong style="font-size:14px">🚕 Melketaxi</strong><br>';if(txSiste.length){html+=txSiste.map(function(e){return'<div style="font-size:12px;margin-top:3px">'+(e.type==='morgen'?'🌅 Morgen':'🌙 Kveld')+' '+fmtD(e.date)+': <strong>'+(e.liter||'–')+' liter</strong></div>';}).join('');}else{html+='<div style="font-size:12px;color:#666;margin-top:3px">Ingen taxi registrert</div>';}html+='</div>';
 
   // Kontaktinfo
   if(s.tel1||s.tel2||s.telVet){
@@ -1300,6 +1198,29 @@ function lagreSmokk(key){
   toast('Smokk lagret ✓');
   renderSmokkSide();
 }
+
+var SMOKK_IMGS={
+  'flaske':'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDABALDA4MChAODQ4SERATGCgaGBYWGDEjJR0oOjM9PDkzODdASFxOQERXRTc4UG1RV19iZ2hnPk1xeXBkeFxlZ2P/2wBDARESEhgVGC8aGi9jQjhCY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2P/wAARCAA8ADwDASIAAhEBAxEB/8QAGwABAAICAwAAAAAAAAAAAAAAAAUGAwQBAgf/xAArEAACAQQBAgQFBQAAAAAAAAABAgADBAUREiExBhNBcRRRUmGBIiMyMzT/xAAXAQEBAQEAAAAAAAAAAAAAAAAAAQID/8QAGREBAQEBAQEAAAAAAAAAAAAAAQACETEh/9oADAMBAAIRAxEAPwD0CIiJJW/E2VurPJYu1tH4mtWBcfUOQGvbqZY5QMzc17nxVa3iUi1Cg6cNnWwDuUyvlFD2v85kdj8vQv24Kr06n0sO/sZIwifGCJ0kRElZEREulX+tvuNSu3mGYqfhq3Aegb0/MsNb+H5mnUcFwg6ljoSm3L8o5Ne0BjrcYzJ0a2QvKagkpTGz1Y9BLdKh4ixNzlEpLaBmdG6qCANE9SSflLdTQU6aovZQAIdu/rDJk4XaIiSsiIiWGuegkY7OLlGA2VbckrjuJH3F1Qtj+4wDH07mTitFD22rT/S/2WbsjMXWNao7kEclB0feSctZEREkRESjM21RbQ+SHLnQATv3lNe58y48v9QZmI4rstPQqlNai6YSMbG0Dc+Zt+RPfc115wblvHXtxhqflNwCgBaYGh6SXmOjRSiukGt9z85kmbrIiIl//9k=',
+  'bla_rod':'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDABALDA4MChAODQ4SERATGCgaGBYWGDEjJR0oOjM9PDkzODdASFxOQERXRTc4UG1RV19iZ2hnPk1xeXBkeFxlZ2P/2wBDARESEhgVGC8aGi9jQjhCY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2P/wAARCAA8ADwDASIAAhEBAxEB/8QAGwAAAQUBAQAAAAAAAAAAAAAABgABAwQHBQL/xAAwEAACAQMBBQUIAwEAAAAAAAABAgMABBEFBhITITFBUXGBkSIyM1JhocHRFWNysf/EABcBAAMBAAAAAAAAAAAAAAAAAAIDBAH/xAAiEQACAgECBwEAAAAAAAAAAAAAAQIRAyExBBITFCJBUVL/2gAMAwEAAhEDEQA/AC/VtXh0pIzLHJI0md1Ux2fU1wJduMHCWSj/AFN+hXc2khWbQ7rKglELqSOhHOs4bn21TihGS1Ezk09Ajfbi4x7FvbjxLH9VUl211JmwnAUHui6epriFG+b7Ut1l7QfKm9OK9Ac8vp2V2q1ZiCLnyES4/wCVch2u1BOTpBJ4oVP2NDys24efpXkuq433xk4GT1rXGH5MuX0MrfbAuyo9g7MTgCJ8kn6AiieNy8auVZCwB3W6j6Gs82ZhE2vWvLkpL+gNaLUuVJOkPg21qQ3sfFsp4/njZfUVlnStZNZXdx8K5lj+R2X0NN4d7gZfRDTMeVPTN0qgSex8Oql18aIdwJq4gzF51UuBm5A7gBQPYJBZsTFvalLKR8OHHmSP1RvQtsPDu211Nj3mVAfAZ/NFNSZXc2PgvEas216Phazdr/aT68/zWk0B7Xxbmsu+PfRW+2PxR8O/Kgcq0ODTNT0zVWIJ0xwB40SJsdBeWFvcJO8Nw8as2RvKTju7KHEBaFVxzJIrUIU4UKRjoqhfQVPlk41Q7Gk9ypo2nfxdgtuX323izMBjJNX6VKpm7djloQ3FzDbJvzOEHZntoQ2ieHUbrjxF/Yi3MHlnnnP3osubO3umUzxhyvTmaRsLRojGbaIoeRXcHOsTknaDXJXkrMyjt5Zk34oZHTvVCRXoWNy8scSwScSQ4RWUgt4ZrUlVUUKoCqBgAcgKiltYJriGeSJWlhzw2PVc9ao7h/CfpAtpuytzmGS7lSMIwYxj2ieecZ6UX0qekyk5bjFFLYVKlSoTT//Z',
+  'bla_svart':'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDABALDA4MChAODQ4SERATGCgaGBYWGDEjJR0oOjM9PDkzODdASFxOQERXRTc4UG1RV19iZ2hnPk1xeXBkeFxlZ2P/2wBDARESEhgVGC8aGi9jQjhCY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2P/wAARCAA8ADwDASIAAhEBAxEB/8QAGgAAAwEBAQEAAAAAAAAAAAAAAwQGAgUBAP/EADQQAAEDAgQCBggHAAAAAAAAAAEAAgMEEQUhMUESEwYiJFFhcRQjMmKBkZKhNENTscHR8P/EABkBAAIDAQAAAAAAAAAAAAAAAAEEAAIDBf/EACARAAICAgICAwAAAAAAAAAAAAABAhEDEgQxEzIUQVH/2gAMAwEAAhEDEQA/AKWym+kVY9tUIWOsxjbnxJVKorHCXYpUH37fJHBHaRMjpCM075pYmiQsLPWAjv2SdS2SSqkmFgXG4I1C078U7waETMjNM+JN2U3aVHbw+VtXy6RpAY0cUhJsXeA8ynnYfAy/DCwfBSji5pDhsn8NxeSGdrJXuMTuqbm/D4pWeBx6N1ls7JpIB7ULUM00AOUQ+ZTZNzmsFuawpF9n+lCorF2WxGoPvlW1lJY3Hw4jPlqbj4hNcb3F8vqT5b2t/kEYtyC+De2v8gjOYn4oWkxSQGyXeMinnsS7oidEJRDGRV05L6aJ53Y0/Zeo0cPKp4492sA+yzwLjvseRQWU90ihPpTHjR7f2VGlq2jZWRBjzYtNwbaLbFPSSbM5x2VELyiK05atCMYj3Ksp8Ip4JOYfWOtbrAWRzSwfox/SE18pLpGPhb+yJdDfZDY1kdXAyV/LD3gcdrhuauDTQD8mP6QudjmGMrqFzWMHMYCWgDUbj/bqs+VsqSDHDXbGXsuUEtzSXR/ETWUpp53dpgFnX1e3Z38FdQjNJNDJ1F4vV9siVMFZK0VgqBMlYctlDKhBWKhpoJ5J4oWtkk9p3f8A0iEZohWDqgQ//9k=',
+  'gra_enkel':'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDABALDA4MChAODQ4SERATGCgaGBYWGDEjJR0oOjM9PDkzODdASFxOQERXRTc4UG1RV19iZ2hnPk1xeXBkeFxlZ2P/2wBDARESEhgVGC8aGi9jQjhCY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2P/wAARCAA8ADwDASIAAhEBAxEB/8QAGwAAAQUBAQAAAAAAAAAAAAAAAgAEBQYHAQP/xAAyEAACAQMCAwUFCQEAAAAAAAABAgMABBEFIQYSMRNBUWGhFCJSgZEjMkJDcXKCsdHw/8QAFwEBAQEBAAAAAAAAAAAAAAAAAQADAv/EABoRAQEAAgMAAAAAAAAAAAAAAAABAxESQVH/2gAMAwEAAhEDEQA/AJq64muYncR2SMFJH3znbyxTI8X3znEdtAD/ACNR2r3fs2rzwlcqZDgjqN6bvs/MVBI76QlbnijVRzSJHHGg7imcfM14vxPqNw5Ec4jJ/CqDH1NMfaEIIePP8q82dOYMiIpHkd/WlHM2sapn372bf4Wx/VNJb++OGFxcs2djztRiWQ9GRf0SkTKfzz8lxUEtp/Ft5bcsd9H26fF0f/DVtsdRtr+2WeCQcp2w2xB8DWdqOvaEy5+KrloOmlNNXto+zLMWCkYwKKTTVuE2v9Qkuku1jVjzcpTJB+tV6cYY1pFZ1driVx4MR61RGTE+NCWIGdvpRnrQSDMbY64NKJWk6hTj9powJm6B/klFDckY5w+ACFA6r6UctzI8ZVA4OSdtgfKuN3xtxx90NkrT3EY5XKdoELHpmtOAwAB0FZ9oAmkvrSGQIEWTmwMknfNaDSyKs/1BcXc48JGHqa0CqbrVhPBdzStGeydyyuNxv4+FMSCYb0JFezjegIpAVG9GBvQjavRNzUkvwzFzatGx6KrH0q6VWuFYD20s3L7oXlB881ZqKSrhAIwRkV2lQkfcaLp9wSXtlDHvT3f6qNveFoDbsbN3WYbqHbKnyqxUqkzy44f1h1+xtCMdcuv+034aMMmtR2+obKSQFYbF+4H/ALrWlVVeIdEtLjWbSTMkTTtiQxkDOO/p1p2lpRFjUKihVHQAYAoq4o5VAyTjxrtCf//Z',
+  'gra_dobbel':'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDABALDA4MChAODQ4SERATGCgaGBYWGDEjJR0oOjM9PDkzODdASFxOQERXRTc4UG1RV19iZ2hnPk1xeXBkeFxlZ2P/2wBDARESEhgVGC8aGi9jQjhCY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2P/wAARCAA8ADwDASIAAhEBAxEB/8QAGwAAAQUBAQAAAAAAAAAAAAAABgABAwQFAgf/xAA1EAABAwIFAAYGCwAAAAAAAAABAgMEABEFBhIhMRMiQXGBsTJRYZGhwRQVIzVDUmJyktHh/8QAFgEBAQEAAAAAAAAAAAAAAAAAAAEC/8QAGhEBAQEAAwEAAAAAAAAAAAAAAAERAiExMv/aAAwDAQACEQMRAD8AKpuONxJLjBZUtaLcHm4vtVCfmWTHZDrUBKk262t3SU+FZ2YwRisi4O+m3uFZcplp0dIoHXxqFVF9edMSV6EaKjv1Kqu5mrGV8SGW/wBjQ+dZyYqVfiH+P+1IIrSeVKPuFXA0rMWNIKVDEHDc8aUgfAVPCzXJCukcS6p1OxCHLJPeDeozBaVYqSiw7VOE+VcNREMpS59HaSlwXHaT33rPvjd43j9QTYbnVl1ZbxCOuMoH0huPEUTsvNvtJdaWFtrF0qHBFebFewFhYcbDajvL/wByxie0HzNEub0yc6AoEZ0Day0n1X2I+dDjp1N3Hur0LEYxmQHmEkArTYE8UDPxnYz62XkFChbY0hbuKDexNdk3FQuoAcPfUg4FaZMArRo1m1JKQkAAqIAsLqJtXVNUxbbfVzCoP1jPTH1lAIKioC9rUexIyIkVuO2SUtiwJ5NCOURqxdR/K0rzFGtKhVSxSGzLiLDqblCSUqHINXajfF2HAO1J8qivNZDSkLubWO4rkcVNNV10j1CoCoBJJNgNzVRGt4JeQ0E6lK+FWNFUIiukeW+rtO1EmW4zc7EhrF0NJ1kEcm+woN7LmFCDG6dxNn3Rv+lPYK2qanqKVNT0qDzjMTBiYo8ixCB1k9x3psuQ04niLSVtlxgXLgI2tY80fzIMWakJlMIdA41DceNZ2D4axh+Kz0xitDagg9Hfqg2PFAM4hlabBWtMJtUhon7Mjcj2H+60snhcOZIhzY7zMxSQrdPVKR7e80W0qB6VKlQf/9k=',
+  'gra_5':'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDABALDA4MChAODQ4SERATGCgaGBYWGDEjJR0oOjM9PDkzODdASFxOQERXRTc4UG1RV19iZ2hnPk1xeXBkeFxlZ2P/2wBDARESEhgVGC8aGi9jQjhCY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2P/wAARCAA8ADwDASIAAhEBAxEB/8QAGwAAAQUBAQAAAAAAAAAAAAAAAAEDBAUGBwL/xAAvEAABAwIFAwIEBwEAAAAAAAABAAIDBBEFBhIhMUFRcRMiFDKB0UJEYXKhscHh/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAH/xAAXEQEBAQEAAAAAAAAAAAAAAAAAARFB/9oADAMBAAIRAxEAPwDoCFHdXUjL6qmEW5u8bKPJjeGRfPXQDw8FBYIVU7MeEt/ONPhrj/iadmnCm8TSO8RO+yC6QqE5tw4cMqHeI/uVHkzth0ZsYKq/7B90GmQs3S51wud3uL4WjkvG4+gV9BVQVMTZYJWSMdw5pugweL0x9aSnmc4DWQ4NOx3uLqsbTRxEtju0LWZupGxUzKiO4e+bc9rt48e0LLbnk3KsK9sc5vVh8xhPtLndWDwz/qjDlPxlVBIy4OuoNuoAATQgjG+7h5TxDgwDXsDf5QvBJJUW5wkUUUOoxRtYSNyButPhGByGj1z6QZDqbvfYgKioKGbEJxDCBcj3OPDR3K6DG0MjawcNACVEXFaJtfh8sBaC4glh7O6LnPHIt3XUVhZctYhNi9RFG1opw6/rOuAb77d7KKh11M2mfC0X98DJDfuRcqI6VzJY2MtZ17k9lf5uw2qbUR1NPCZIAxkZ0ndu9tx9Qnpss1D8Fp2tDPjYXOcRq2Id0v8AQKozlROY4r8uOzR+q8ul9ONjC67zsT/ZWhwnLJqqOduJRvhqGyAMI/DbqDwQb/wrLC8ufAySR1DoKunkAcRJF7muHFultymh/LEEMeDwyQ6S6UanEG/gK4UenoqakdI6mgjiMhBfoba9lIUUJEqECJUIQIlQhAIQhB//2Q==',
+  'gra_6':'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDABALDA4MChAODQ4SERATGCgaGBYWGDEjJR0oOjM9PDkzODdASFxOQERXRTc4UG1RV19iZ2hnPk1xeXBkeFxlZ2P/2wBDARESEhgVGC8aGi9jQjhCY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2P/wAARCAA8ADwDASIAAhEBAxEB/8QAGwAAAQUBAQAAAAAAAAAAAAAAAAECAwQGBQf/xAAvEAACAQMCAwYEBwAAAAAAAAABAgMABBESIQUGMRMUQVFhcTJysdEiQkRigZLh/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAH/xAAXEQEBAQEAAAAAAAAAAAAAAAAAARFB/9oADAMBAAIRAxEAPwD0Ciqk3E7GAZlu4U8N3FV25h4Sv62M/Lk/QUHTorjvzPwpek7t8sTfaoW5ssB8Mdw/sgH1NB3qKzj82RYzHYzkfuIFVpOcX/JYqPml+wpg1lFZGw52Scnt7VlC7MIwWINaK34pZXEIkS4QA+DnSR7g0GR4qrI80RYqRJpbTjf0Nc3QiqTlyR5mtZzDw+NLC4nzl2lEgOOmQAR6jascZGOxO3tVhUy3DDwH9BT+9OR8WkeiCqusDxFOEikYJG9VE7dq+M9q+o4ABG9MCKeqn+TURMRxkk46dTTu0Y/Cp9ztSLc4vWVjNdv2NqiasaiNlFd/h/AJYoCLjs9ZbOxztgUnJ8RFvcStuWYKD7D/AGtHUFPitt3vh08QBLFcqB5jpXnjxMjaWUg+VenE4BPX2rz684bxSa6muzYTpDI7Mmd3xnxUbikFDT6U9FHlUJkZJ2jbWrKN8jGPSl7wRMqZJLdMVUWQpOwFPiiiMqrcXMVshOC8h6U3uvEZDrhtLiWMD8RVDt960XCOXbq0kW6F7od8aojEGGnrjfcGpo7fCoLaCwjWzkEkR3EgOdR86uUiqFGFAAHgKWopKKWigYI0DMwRQXOWIHXw3pGhiYqWjQlTqXKjY+YqSigSilooCiiig//Z',
+  'gra_10':'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDABALDA4MChAODQ4SERATGCgaGBYWGDEjJR0oOjM9PDkzODdASFxOQERXRTc4UG1RV19iZ2hnPk1xeXBkeFxlZ2P/2wBDARESEhgVGC8aGi9jQjhCY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2P/wAARCAA8ADwDASIAAhEBAxEB/8QAGwAAAgIDAQAAAAAAAAAAAAAAAAYCAwEEBQf/xAAyEAABBAECAwUGBgMAAAAAAAABAAIDEQQFEiExUQYTQWFxFBYigbHBFTIzUpGhVHLR/8QAFgEBAQEAAAAAAAAAAAAAAAAAAAEC/8QAFhEBAQEAAAAAAAAAAAAAAAAAABEB/9oADAMBAAIRAxEAPwD0BC4ed2jiwxxgL3XQbvAJHVafvhf5cA/OUf8AEgaEJb948t4uPBirznv7KLte1L/Gxm+riVYlMyEpv7Q6gOZw2+jSfutSTtJqXhLEPSMfdIU7oSDB2t1WPJe2XuZmN4i27b+YTTg6u/Ixw+fEfE/9u6wfMKNTZS1r8U8OdIJIyIXPPdmuBXIf8IscvonntOa0xp6SD6FJchBcaH8K4zrWjkoK3vCfFVljPC2+iKb+9VEzJwUe8o8RY6LIjaR+oAo1EDTnlx6BUSwZcb8SYZ43bNwJaDYdx5L0nFZvi72RlOlO8g+HQfxSQ9ExoZNTgb3V7niy7nS9EWdXFGdhx52M6CWwDxBHMHqkTUdPfhZckO5smzxb0Pkn7IgjyYHwzN3RvFOFkWPklnU+zMzpydNZjY8DQPgF7nnx8gopZII5hQ2glbMkeUyR4fjyhkbi0vLDtJHMAqhuQwyObtFt5qomxobRAFjqFM75HEAXdcA3ooRZIeXNjjaXNNVVrc0/C1PU3uhiaMd0YBe2ZpYCD/ZtFuyOt2Y05/txyJg5hiHwtcwi7HOyKTYtDSMH2PHFtkic4UYjO6Vjf9bXQUAhCEGFSMPGDnuEEW57tzjtHE1V/wBK9CCqPGgjkMkcMbXuABc1oBIHL6qxZQgEIQg//9k=',
+};
+var SMOKK_LISTE=[{key:'flaske',label:'Flaske'},{key:'bla_rod',label:'Blå kopp – rød smokk'},{key:'bla_svart',label:'Blå kopp – svart smokk'},{key:'gra_enkel',label:'Grå enkelkopp'},{key:'gra_dobbel',label:'Grå dobbeltkopp'},{key:'gra_5',label:"Grå 5'er bar"},{key:'gra_6',label:"Grå 6'er bar"},{key:'gra_10',label:"Grå 10'er bar"}];
+
+var _valgte=[];var _grafFilter='alle';var _vektChart=null;
+function renderKalver(){var q=($('k-search').value||'').toLowerCase();var cs=getCalves();if(kFilterVal==='heifer')cs=cs.filter(function(c){return c.sex==='heifer';});else if(kFilterVal==='bull')cs=cs.filter(function(c){return c.sex==='bull';});else if(kFilterVal==='sick')cs=cs.filter(function(c){return c.status==='sick';});else if(kFilterVal==='ut')cs=cs.filter(function(c){return c.status==='utrangert';});else cs=cs.filter(function(c){return c.status!=='utrangert';});if(q)cs=cs.filter(function(c){return(c.name||'').toLowerCase().includes(q)||(c.earTag||'').toLowerCase().includes(q);});var g=$('calf-grid'),e=$('calf-empty');if(!cs.length){g.innerHTML='';e.style.display='';return;}e.style.display='none';g.innerHTML='';cs.forEach(function(c){var sc=c.status==='utrangert'?'sx':c.status==='sick'?'sr':'sg';var age=ageStr(c.born);var sel=_valgte.indexOf(c.id)!==-1;var div=document.createElement('div');div.className='cc '+sc+(sel?' cc-sel':'');div.dataset.cid=c.id;div.innerHTML='<div class="ch"><div class="cn">'+(sel?'<span style="margin-right:4px">✅</span>':'')+(c.earTag?'<span style="font-weight:800;color:var(--barn)">'+c.earTag+'</span> ':'')+( c.name||'(uten navn)')+'</div><div style="display:flex;gap:.25rem;flex-wrap:wrap">'+(c.sex==='bull'?'<span class="badge b-bull">Okse</span>':'<span class="badge b-cow">Kvige</span>')+(c.status==='sick'?'<span class="badge b-sick"><span class="sdot"></span>Syk</span>':'')+'</div></div><div class="cm">'+(c.born?'<div>Født: <strong>'+fmtD(c.born)+'</strong>'+(age?' · '+age:'')+'</div>':'')+(c.pen?'<div>📍 '+c.pen+'</div>':'')+'</div>';div.addEventListener('click',function(){toggleVelgKalv(this.dataset.cid);});g.appendChild(div);});var bar=$('flytt-bar');if(bar){bar.style.display=_valgte.length?'flex':'none';var ant=$('flytt-antall');if(ant)ant.textContent=_valgte.length+' valgt';}}
+function toggleVelgKalv(id){var idx=_valgte.indexOf(id);if(idx===-1){if(_valgte.length===0){navTo('kalvkort',id);return;}_valgte.push(id);}else _valgte.splice(idx,1);renderKalver();}
+function avbrytFlytt(){_valgte=[];renderKalver();}
+function openFlyttModal(){if(!_valgte.length)return;var sel=$('flytt-binge-valg');sel.innerHTML=getLokasjoner().map(function(l){return '<option value="'+l.label+'">'+l.label+'</option>';}).join('');var info=$('flytt-modal-info');if(info)info.textContent=_valgte.length+' kalver flyttes';openM('m-flytt-binge');}
+function doFlyttTilBinge(){var binge=$('flytt-binge-valg').value;if(!binge)return;_valgte.forEach(function(id){updateCalf(id,{pen:binge});addEv_(id,{type:'binge',date:today(),title:'Flyttet til '+binge});});toast(_valgte.length+' kalver flyttet ✓');_valgte=[];closeM('m-flytt-binge');renderKalver();renderHjem();}
+function renderSmokkSide(){var grid=$('smokk-grid');if(!grid)return;if(!grid.children.length){SMOKK_LISTE.forEach(function(item){var card=document.createElement('div');card.className='card';card.style.cssText='text-align:center;padding:1rem .8rem';var imgSrc=SMOKK_IMGS[item.key]||'';card.innerHTML=(imgSrc?'<img src="'+imgSrc+'" style="width:60px;height:60px;object-fit:contain;margin-bottom:.5rem"><br>':'')+'<div style="font-family:Fraunces,serif;font-weight:700;color:var(--barn);margin-bottom:.5rem;font-size:.9rem">'+item.label+'</div><div style="display:flex;gap:.4rem;justify-content:center;margin-bottom:.6rem"><button data-k="'+item.key+'" data-v="aktiv" class="smokk-btn" style="padding:.3rem .6rem;border-radius:20px;font-size:.78rem;cursor:pointer;border:2px solid var(--border);background:var(--milk)">✅ Aktiv</button><button data-k="'+item.key+'" data-v="passiv" class="smokk-btn" style="padding:.3rem .6rem;border-radius:20px;font-size:.78rem;cursor:pointer;border:2px solid var(--border);background:var(--milk)">⏸️ Passiv</button></div><div style="font-size:.73rem;color:var(--muted);margin-bottom:.3rem">Smokk byttet:</div><div style="display:flex;gap:.3rem;align-items:center;justify-content:center"><input type="date" id="smokk-dato-'+item.key+'" style="font-size:.75rem;padding:.2rem .4rem;border:1px solid var(--border);border-radius:6px;background:var(--milk);min-height:auto;width:auto"><button data-k="'+item.key+'" class="smokk-lagre" style="padding:.2rem .5rem;border-radius:6px;font-size:.75rem;cursor:pointer;border:none;background:var(--moss);color:#fff;font-weight:700">💾</button></div><div id="smokk-status-'+item.key+'" style="font-size:.73rem;color:var(--muted);margin-top:.3rem"></div>';card.querySelectorAll('.smokk-btn').forEach(function(b){b.addEventListener('click',function(){setSmokk(this.dataset.k,this.dataset.v,this);});});card.querySelectorAll('.smokk-lagre').forEach(function(b){b.addEventListener('click',function(){lagreSmokk(this.dataset.k);});});grid.appendChild(card);});}SMOKK_LISTE.forEach(function(item){var data=JSON.parse(localStorage.getItem('kk_smokk_'+item.key)||'{}');var statusEl=document.getElementById('smokk-status-'+item.key);if(statusEl){var parts=[];if(data.status)parts.push(data.status==='aktiv'?'✅ Aktiv':'⏸️ Passiv');if(data.byttet)parts.push('Byttet: '+fmtD(data.byttet));statusEl.textContent=parts.join(' · ');}var datoEl=document.getElementById('smokk-dato-'+item.key);if(datoEl&&data.byttet)datoEl.value=data.byttet;document.querySelectorAll('.smokk-btn[data-k="'+item.key+'"]').forEach(function(b){var on=b.dataset.v===data.status;b.style.background=on?(b.dataset.v==='aktiv'?'var(--moss)':'var(--rust)'):'var(--milk)';b.style.color=on?'#fff':'var(--text)';b.style.fontWeight=on?'700':'400';b.style.borderColor=on?(b.dataset.v==='aktiv'?'var(--moss)':'var(--rust)'):'var(--border)';});});}
+function grafFilter(btn,filter){document.querySelectorAll('[data-gf]').forEach(function(b){b.classList.remove('on');});btn.classList.add('on');_grafFilter=filter;renderGrafVekt();}
+function renderGrafVekt(){var alle=getCalves().filter(function(c){return c.status!=='utrangert'&&c.born;});if(_grafFilter!=='alle')alle=alle.filter(function(c){return c.breed===_grafFilter;});var kviger=[],okser=[];alle.forEach(function(c){var evs=getEvs(c.id).filter(function(e){return e.type==='vekt'&&e.value;});evs.forEach(function(e){var dag=daysBetween(c.born,e.date);if(dag<0)return;(c.sex==='heifer'?kviger:okser).push({x:dag,y:parseFloat(e.value),label:(c.earTag||'')+' '+(c.name||'')});});});var canvas=$('graf-vekt'),ingen=$('graf-ingen');if(!canvas)return;if(!kviger.length&&!okser.length){canvas.style.display='none';if(ingen)ingen.style.display='';return;}canvas.style.display='';if(ingen)ingen.style.display='none';if(_vektChart)_vektChart.destroy();_vektChart=new Chart(canvas,{type:'scatter',data:{datasets:[{label:'Kviger',data:kviger,backgroundColor:'rgba(74,103,65,0.7)',borderColor:'rgba(74,103,65,1)',pointRadius:5},{label:'Okser',data:okser,backgroundColor:'rgba(26,122,175,0.7)',borderColor:'rgba(26,122,175,1)',pointRadius:5}]},options:{responsive:true,plugins:{legend:{position:'top'},tooltip:{callbacks:{label:function(ctx){return ctx.raw.label+': '+ctx.raw.y+' kg (dag '+ctx.raw.x+')';}}}},scales:{x:{title:{display:true,text:'Alder (dager)'},min:0},y:{title:{display:true,text:'Vekt (kg)'},min:0}}}});}
+function renderVektVarselRapport(){var alle=getCalves().filter(function(c){return c.status!=='utrangert'&&c.born;});var varsler=[];alle.forEach(function(c){var dager=daysBetween(c.born,today());var evs=getEvs(c.id).filter(function(e){return e.type==='vekt';}).sort(function(a,b){return b.date.localeCompare(a.date);});var siste=evs[0]||null;var dagSiden=daysBetween(siste?siste.date:c.born,today());if(dagSiden>=(dager<90?7:30))varsler.push({c:c,dagSiden:dagSiden});});var el=$('r-vekt-varsel');if(!el)return;el.innerHTML=varsler.length?varsler.map(function(v){return '<div style="display:flex;justify-content:space-between;padding:.4rem 0;border-bottom:1px solid var(--border);font-size:.85rem"><span><strong>'+(v.c.earTag||'')+' '+(v.c.name||'')+'</strong></span><span style="color:var(--rust);font-weight:700">'+v.dagSiden+' dager</span></div>';}).join(''):'<p style="color:var(--moss);font-size:.85rem">✅ Alle kalver er veid i tide</p>';}
 
 </script>
 </body>
